@@ -4,6 +4,8 @@ groups:
   jobs:
   - deploy-application
   - tag
+  - github-release
+  - gh-release
 
 jobs:
 - name: deploy-application
@@ -36,6 +38,18 @@ jobs:
       only_tag: true
       repository: app-source
       tag: version/number
+- name: github-release
+  public: true
+  serial: true
+  plan:
+  - get: app-source
+    passed: [tag]
+    trigger: true
+  - get: version
+  - put: gh-release
+    params:
+      name: version/number
+      tag: version/number
 
 resources:
 - name: app-source
@@ -66,6 +80,12 @@ resources:
     file: version
     private_key: {{github-private-key}}
     git_user: {{git-email}}
+- name: gh-release
+  type: github-release
+  source:
+    user: Infra-Red
+    repository: app-pipeline-demo
+    access_token: {{github-access-token}}
 
 resource_types:
 - name: slack-notification
