@@ -1,0 +1,49 @@
+---
+groups:
+- name: cf-deploy-app
+  jobs:
+  - deploy-application
+
+jobs:
+- name: deploy-application
+  serial: true
+  public: true
+  plan:
+  - get: app-source
+    trigger: true
+  - put: resource-deploy-app
+    params:
+      manifest: app-source/manifest.yml
+    on_failure:
+      put: failure-alert
+      params:
+        channel:  logsearch
+        username: concourse-ci
+        icon_url: https://i.imgur.com/eioobYI.png
+        text:     {{slack-text}}
+
+resources:
+- name: app-source
+  type: git
+  source:
+    uri: https://github.com/Infra-Red/app-pipeline-demo.git
+    branch: master
+- name: failure-alert
+  type: slack-notification
+  source:
+    url: {{slack-url}}
+- name: resource-deploy-app
+  type: cf
+  source:
+    api: {{cf-api}}
+    username: {{cf-user}}
+    password: {{cf-pass}}
+    organization: {{cf-org}}
+    space: {{cf-space}}
+    skip_cert_check: false
+
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource

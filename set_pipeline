@@ -1,0 +1,4 @@
+#!/bin/bash -e
+
+fly -t concourse set-pipeline --pipeline bump-version --config pipeline-merged.yml
+fly -t concourse unpause-pipeline --pipeline bump-version
